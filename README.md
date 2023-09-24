@@ -1,2 +1,2 @@
-# SlideApp_1.0
+# SlideApp
 Hand tracking slide control
