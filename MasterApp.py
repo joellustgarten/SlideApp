@@ -43,7 +43,6 @@ class VatApp:
         test = cv2.imshow('Slides', slideImage)
         slide_image.configure(image=slideImage)
 
-
     def __init__(self):
        # window basic settings
         self.window = tk.Tk()
@@ -109,7 +108,7 @@ class VatApp:
         self.window.configure(menu=menu)
         # Create and place slide frame on window
         slide_panel = ttk.LabelFrame(self.window, text=' Video feed: ')
-        slide_panel.place(relwidth=0.60, relheight=0.71, relx=0.030, rely=0.043)
+        slide_panel.place(relwidth=0.30, relheight=0.35, relx=0.030, rely=0.043)
         # Place slide image in slide_panel
         slide_image = ttk.Label(slide_panel, background='white')
         slide_image.place(anchor='center', relwidth=0.965, relheight=0.965, relx=0.5, rely=0.5)
@@ -185,3 +184,4 @@ class VatApp:
 
 if __name__=='__main__':
     vatFrame = VatApp()
+    vatFrame.__init__()

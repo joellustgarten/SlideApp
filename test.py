@@ -119,6 +119,7 @@ def finalize():
     label2.configure(background='red')
 
 
+
 # open button
 open_button = ttk.Button(
     root,
