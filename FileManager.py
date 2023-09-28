@@ -1,7 +1,6 @@
 import tkinter as tk
 import os
-from tkinter import filedialog
-
+from tkinter import filedialog, messagebox
 
 class FileManager:
     def __init__(self, title="Select presentation folder"):
@@ -21,14 +20,12 @@ class FileManager:
         else:
             return []
 
-
     def selectFiles(self, Directory):
         Files = []
         for root, _, files in os.walk(Directory):
             for file in files:
                 Files.append(os.path.join(root, file))
         return Files
-
 
 if __name__ == "__main__":
     file_manager = FileManager()
