@@ -1,5 +1,6 @@
 import sys
 import tkinter as tk
+from datetime import time
 from tkinter import ttk
 from ttkthemes import themed_style
 from ttkthemes.themed_style import ThemedStyle
@@ -12,6 +13,7 @@ import numpy
 from tkinter import messagebox
 from FileManager import FileManager
 import ntpath
+from HandTrackingModule import handDetector
 
 # Set slideshow global variables for file and controls
 directory = []
@@ -62,6 +64,7 @@ class VatApp:
         self.slideLabel.image = image2
         self.label3.configure(image=image1)
         self.label3.image = image1
+        self.slide_number.configure(text=first_slide + 1)
 
     # goto next slide
     def next_slide(self):
@@ -74,6 +77,7 @@ class VatApp:
         else:
             pass
         print(f'{slide_number}, {first_slide}, {(size - 1)}')
+        self.slide_number.configure(text=slide_number + 1)
 
     # goto last slide
     def last_slide(self):
@@ -87,6 +91,7 @@ class VatApp:
             pass
         # noinspection PyTypeChecker
         print(f'{slide_number}, {first_slide}, {(size - 1)}')
+        self.slide_number.configure(text=slide_number)
 
     # start video stream
     def video_stream(self):
@@ -117,9 +122,31 @@ class VatApp:
     # Finalize video stream from webcam
     def finalize(self):
         global video
-        # label2.place_forget() destroy the label
         video.release()
-        self.label2.configure(background='red')
+        self.videoLabel.configure(background='black')
+
+    # Hand Tracking method
+    def hand_track(self):
+        pTime = 0
+        cTime = 0
+        cap = cv2.VideoCapture(0)
+        detector = handDetector()
+        while True:
+            success, img = cap.read()
+            img = detector.findHands(img)
+            lmList = detector.findPosition(img)
+            if len(lmList) != 0:
+                print(lmList[4])
+            """
+            cTime = time.time()
+            fps = 1 / (cTime - pTime)
+            pTime = cTime
+
+            cv2.putText(img, str(int(fps)), (10, 70), cv2.FONT_HERSHEY_PLAIN, 3,
+                        (0, 255, 0), 3)
+            """
+            cv2.waitKey(1)
+            return img
 
     def __init__(self):
 
@@ -153,13 +180,10 @@ class VatApp:
         self.style = ttk.Style(self.root)
         self.style.theme_use("classic")
         availableThemes = self.style.theme_names()
-        # self.style.configure('TButton', relief='flat', anchor='center')
-        # self.style.configure('TLabelframe', bordercolor='white', background='blue')
+        # self.style.configure('TLabel', bordercolor='white', background='blue')
 
         # Create background label for style setting and resize corner tab
-        self.bgPanel = ttk.Labelframe(self.root, border=False)
-        self.bgPanel.place(relwidth=1.0, relheight=1.0)
-        self.grip = ttk.Sizegrip(self.bgPanel)
+        self.grip = ttk.Sizegrip(self.root)
         self.grip.place(relx=1.0, rely=1.0, anchor='se')
 
         # Create menu bar on root window
@@ -204,37 +228,83 @@ class VatApp:
         # Define and place upper row buttons
         # Open file button
         self.open_button = tk.Button(self.button_frame, text='OPEN FILE', command=self.select_file, cursor='mouse', width=18)
-        self.style.configure('TButton.label', justify='center')
         self.open_button.grid(row=0, column=0)
 
         # Show slide button
         self.show_button = tk.Button(self.button_frame, text='SHOW SLIDE', command=lambda: self.show_slide(slide_number), cursor='mouse', width=18)
-        self.style.configure('TButton.label', justify='center')
         self.show_button.grid(row=0, column=1)
 
-        # Next slide button
+        # Stream button
         self.stream_button = tk.Button(self.button_frame, text='START STREAMING', command=self.video_stream, cursor='mouse', width=18)
-        self.style.configure('TButton.label', justify='center')
         self.stream_button.grid(row=0, column=2)
 
-        # Last slide button
+        # Stop stream button
         self.stop_stream_button = tk.Button(self.button_frame, text='STOP STREAMING', command=self.finalize, cursor='mouse', width=18)
-        self.style.configure('TButton.label', justify='center')
         self.stop_stream_button.grid(row=0, column=3)
 
         # Create and place label frame for image folder content
         self.title_file_panel = ttk.Label(self.root, border=False, text='FILE CONTENT', foreground='black', font=("Verdana", 8))
         self.title_file_panel.place(relx=0.05, rely=0.12)
-        self.filePanel = ttk.Label(self.root, border=True, text='', background='white', foreground='black')
+        self.filePanel = ttk.Label(self.root, border=True, borderwidth=1, relief='solid' ,text='', background='white', foreground='black')
         self.filePanel.place(relwidth=0.90, relheight=0.035, relx=0.05, rely=0.15)
 
         # create the label for the slides on the root window
         self.slideLabel = tk.Label(self.root, border=True, borderwidth=1, relief='groove')
         self.slideLabel.place(relwidth=0.4, relheight=0.590, relx=0.25, rely=0.53,  anchor='center')
 
+        # Create and set frame for slide control buttons
+        self.nav_button_panel = tk.Label(self.root, border=True, borderwidth=0.3, relief='groove', background='#95A5A6')
+        self.nav_button_panel.place(relwidth=0.4, relheight=0.08, relx=0.048, rely=0.87)
+        self.nav_button_panel.columnconfigure(0, weight=1)
+        self.nav_button_panel.columnconfigure(1, weight=1)
+        self.nav_button_panel.rowconfigure(0, weight=1)
+
+        # Last slide button
+        self.last_slide_button = tk.Button(self.nav_button_panel, text='LAST SLIDE', command=self.last_slide,
+                                            cursor='mouse', width=18)
+        self.last_slide_button.grid(row=0, column=0)
+
+        # Next slide button
+        self.next_slide_button = tk.Button(self.nav_button_panel, text='NEXT SLIDE', command=self.next_slide,
+                                           cursor='mouse', width=18)
+        self.next_slide_button.grid(row=0, column=1)
+
         # create the label for video feed on the root window
         self.videoLabel = tk.Label(self.root, border=True, borderwidth=0.5, relief='groove')
-        self.videoLabel.place(relwidth=0.3, relheight=0.46, relx=0.66, rely=0.466, anchor='center')
+        self.videoLabel.place(relwidth=0.3, relheight=0.46, relx=0.63, rely=0.466, anchor='center')
+
+        # Create and set frame for hand tracking buttons
+        self.hand_control_frame = tk.Label(self.root, border=True, borderwidth=0.3, relief='groove', background='#95A5A6')
+        self.hand_control_frame.place(relwidth=0.3, relheight= 0.085, relx=0.48, rely= 0.74)
+        self.hand_control_frame.columnconfigure(0, weight=1)
+        self.hand_control_frame.rowconfigure(0, weight=1)
+
+        # Hand tracking function button
+        self.hand_tracking_button = tk.Button(self.hand_control_frame, text='HAND TRACKING', command=self.hand_track, cursor='mouse', width=18)
+        self.hand_tracking_button.grid(row=0, column=0)
+
+        # Create and set information frame
+        self.info_frame = tk.Label(self.root, border=True, borderwidth=1, relief='groove', background='#B3B6B7')
+        self.info_frame.place(relwidth=0.13, relheight= 0.46, relx=0.813, rely=0.235)
+        self.info_frame.columnconfigure(0, weight=1)
+        self.info_frame.rowconfigure(0, weight=1)
+        self.info_frame.rowconfigure(1, weight=2)
+        self.info_frame.rowconfigure(2, weight=1)
+        self.info_frame.rowconfigure(3, weight=2)
+
+        # Set information messages on info_frame
+        self.slide_number_label = ttk.Label(self.info_frame, text='Slide number',foreground='black', font=('Verdana', 10), background='#B3B6B7')
+        self.slide_number_label.grid(row=0, column=0)
+        self.slide_number = tk.Label(self.info_frame, text=' ', foreground='blue', font=('Verdana', 58), background='#B3B6B7')
+        self.slide_number.grid(row=1, column=0)
+        self.finger_number_label = tk.Label(self.info_frame, text='Read fingers', foreground='black', font=('Verdana', 10), background='#B3B6B7')
+        self.finger_number_label.grid(row=2, column=0)
+        self.finger_number = tk.Label(self.info_frame, text=' ', foreground='blue', font=('Verdana', 58), background='#B3B6B7')
+        self.finger_number.grid(row=3, column=0)
+
+        # Set close app button
+        self.close_button = tk.Button(self.root, text='CLOSE', command=self.close_root_window, cursor='mouse', width=18, bg='#3498DB')
+        self.close_button.place(relx=0.81, rely=0.9)
 
         # create the toplevel window
         self.window = tk.Toplevel(self.root)
